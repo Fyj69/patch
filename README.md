@@ -1,1 +1,11 @@
-# patch
+## Credits
+- [KernelSU](https://github.com/tiann/KernelSU)
+- [dabao1955](https://github.com/dabao1955/kernel_build_action)
+- [tomxi1997](https://github.com/tomxi1997/LXC_KernelSU_Action)
+- [5kind_Action](https://github.com/5kind/LXC-DOCKER-KernelSU_Action)
+- [slimhub_actions](https://github.com/rokibhasansagar/slimhub_actions)
+- [DogDayAndroid](https://github.com/DogDayAndroid/Android-Builder)
+- [KernelSU_Action](https://github.com/XiaoleGun/KernelSU_Action)
+- [kali-nethunter_patches](https://github.com/tomxi1997/kali-nethunter_patches)
+- [Kali-defconfig-checker](https://github.com/Biohazardousrom/Kali-defconfig-checker)
+- [lxc-docker-support-for-android](https://github.com/tomxi1997/lxc-docker-support-for-android)
