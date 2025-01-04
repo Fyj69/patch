@@ -185,7 +185,7 @@ index 66929756..1e9ce687 100644
  ifdef KSU_MANAGER_PACKAGE
  ccflags-y += -DKSU_MANAGER_PACKAGE=\"$(KSU_MANAGER_PACKAGE)\"
  $(info -- KernelSU-Next Manager package name: $(KSU_MANAGER_PACKAGE))
-@@ -53,13 +53,31 @@ $(info -- KernelSU Manager signature hash: $(KSU_EXPECTED_HASH))()
+@@ -53,13 +53,31 @@ $(info -- KernelSU Manager signature hash: $(KSU_EXPECTED_HASH))
  $(info -- KernelSU-Next Manager signature size: $(KSU_NEXT_EXPECTED_SIZE))
  $(info -- KernelSU-Next Manager signature hash: $(KSU_NEXT_EXPECTED_HASH))
  
