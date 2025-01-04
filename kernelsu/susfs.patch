@@ -155,7 +155,7 @@ diff --git a/kernel/Makefile b/kernel/Makefile
 index 66929756..1e9ce687 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
-@@ -29,14 +29,6 @@
+@@ -29,14 +29,6 @@ $(warning "KSU_GIT_VERSION not defined! It is better to make KernelSU a git subm
  ccflags-y += -DKSU_VERSION=16
  endif
  
@@ -185,7 +185,7 @@ index 66929756..1e9ce687 100644
  ifdef KSU_MANAGER_PACKAGE
  ccflags-y += -DKSU_MANAGER_PACKAGE=\"$(KSU_MANAGER_PACKAGE)\"
  $(info -- KernelSU-Next Manager package name: $(KSU_MANAGER_PACKAGE))
-@@ -53,13 +53,31 @@
+@@ -53,13 +53,31 @@ $(info -- KernelSU Manager signature hash: $(KSU_EXPECTED_HASH))()
  $(info -- KernelSU-Next Manager signature size: $(KSU_NEXT_EXPECTED_SIZE))
  $(info -- KernelSU-Next Manager signature hash: $(KSU_NEXT_EXPECTED_HASH))
  
@@ -302,7 +302,7 @@ diff --git a/kernel/apk_sign.c b/kernel/apk_sign.c
 index ba8b73f2..9af28285 100644
 --- a/kernel/apk_sign.c
 +++ b/kernel/apk_sign.c
-@@ -314,7 +314,14 @@
+@@ -314,7 +314,14 @@ module_param_cb(ksu_debug_manager_uid, &expected_size_ops,
  
  #endif
  
@@ -383,7 +383,7 @@ index 009216ef..36a90a7d 100644
  		// we are manager, allow!
  		return true;
  	}
-@@ -110,7 +132,7 @@
+@@ -110,7 +132,7 @@ static void setup_groups(struct root_profile *profile, struct cred *cred)
  	set_groups(cred, group_info);
  }
  
@@ -392,7 +392,7 @@ index 009216ef..36a90a7d 100644
  {
  	struct cred *cred;
  
-@@ -171,7 +193,7 @@
+@@ -171,7 +193,7 @@ void escape_to_root(void)
  
  	setup_groups(profile, cred);
  
@@ -401,7 +401,7 @@ index 009216ef..36a90a7d 100644
  }
  
  int ksu_handle_rename(struct dentry *old_dentry, struct dentry *new_dentry)
-@@ -208,7 +230,7 @@
+@@ -208,7 +230,7 @@ int ksu_handle_rename(struct dentry *old_dentry, struct dentry *new_dentry)
  	pr_info("renameat: %s -> %s, new path: %s\n", old_dentry->d_iname,
  		new_dentry->d_iname, buf);
  
@@ -410,7 +410,7 @@ index 009216ef..36a90a7d 100644
  
  	return 0;
  }
-@@ -233,7 +255,7 @@
+@@ -233,7 +255,7 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
  	}
  
  	bool from_root = 0 == current_uid().val;
@@ -419,7 +419,7 @@ index 009216ef..36a90a7d 100644
  
  	if (!from_root && !from_manager) {
  		// only root or manager can access this interface
-@@ -257,7 +279,7 @@
+@@ -257,7 +279,7 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
  	if (arg2 == CMD_GRANT_ROOT) {
  		if (is_allow_su()) {
  			pr_info("allow root for: %d\n", current_uid().val);
@@ -428,7 +428,7 @@ index 009216ef..36a90a7d 100644
  			if (copy_to_user(result, &reply_ok, sizeof(reply_ok))) {
  				pr_err("grant_root: prctl reply error\n");
  			}
-@@ -292,7 +314,7 @@
+@@ -292,7 +314,7 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
  			if (!post_fs_data_lock) {
  				post_fs_data_lock = true;
  				pr_info("post-fs-data triggered\n");
@@ -437,7 +437,7 @@ index 009216ef..36a90a7d 100644
  			}
  			break;
  		}
-@@ -319,7 +341,7 @@
+@@ -319,7 +341,7 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
  		if (!from_root) {
  			return 0;
  		}
@@ -446,7 +446,7 @@ index 009216ef..36a90a7d 100644
  			if (copy_to_user(result, &reply_ok, sizeof(reply_ok))) {
  				pr_err("sepolicy: prctl reply error\n");
  			}
-@@ -380,6 +402,338 @@
+@@ -380,6 +402,338 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
  		return 0;
  	}
  
@@ -785,7 +785,7 @@ index 009216ef..36a90a7d 100644
  	// all other cmds are for 'root manager'
  	if (!from_manager) {
  		return 0;
-@@ -447,11 +801,15 @@
+@@ -447,11 +801,15 @@ static bool should_umount(struct path *path)
  		return false;
  	}
  
@@ -801,7 +801,7 @@ index 009216ef..36a90a7d 100644
  }
  
  static int ksu_umount_mnt(struct path *path, int flags)
-@@ -464,7 +822,7 @@
+@@ -464,7 +822,7 @@ static int ksu_umount_mnt(struct path *path, int flags)
  #endif
  }
  
@@ -810,7 +810,7 @@ index 009216ef..36a90a7d 100644
  {
  	struct path path;
  	int err = kern_path(mnt, 0, &path);
-@@ -488,6 +846,19 @@
+@@ -488,6 +846,19 @@ static void try_umount(const char *mnt, bool check_mnt, int flags)
  	}
  }
  
@@ -830,7 +830,7 @@ index 009216ef..36a90a7d 100644
  int ksu_handle_setuid(struct cred *new, const struct cred *old)
  {
  	// this hook is used for umounting overlayfs for some uid, if there isn't any module mounted, just ignore it!
-@@ -507,6 +878,22 @@
+@@ -507,6 +878,22 @@ int ksu_handle_setuid(struct cred *new, const struct cred *old)
  		return 0;
  	}
  
@@ -853,7 +853,7 @@ index 009216ef..36a90a7d 100644
  	if (!is_appuid(new_uid) || is_unsupported_uid(new_uid.val)) {
  		// pr_info("handle setuid ignore non application or isolated uid: %d\n", new_uid.val);
  		return 0;
-@@ -516,7 +903,17 @@
+@@ -516,7 +903,17 @@ int ksu_handle_setuid(struct cred *new, const struct cred *old)
  		// pr_info("handle setuid ignore allowed application: %d\n", new_uid.val);
  		return 0;
  	}
@@ -871,7 +871,7 @@ index 009216ef..36a90a7d 100644
  	if (!ksu_uid_should_umount(new_uid.val)) {
  		return 0;
  	} else {
-@@ -525,10 +922,12 @@
+@@ -525,10 +922,12 @@ int ksu_handle_setuid(struct cred *new, const struct cred *old)
  #endif
  	}
  
