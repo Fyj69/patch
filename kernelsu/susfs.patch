@@ -835,10 +835,10 @@ index 009216ef..32d952b4 100644
 +	ksu_try_umount("/product", true, 0);
 +	ksu_try_umount("/data/adb/modules", false, MNT_DETACH);
  	// try umount ksu temp path
- 	try_umount("/debug_ramdisk", false, MNT_DETACH);
- 	try_umount("/sbin", false, MNT_DETACH);
+-	try_umount("/debug_ramdisk", false, MNT_DETACH);
+-	try_umount("/sbin", false, MNT_DETACH);
  	
- 	// try umount hosts file
+-	// try umount hosts file
 -	try_umount("/system/etc/hosts", false, MNT_DETACH);
 +	ksu_try_umount("/debug_ramdisk", false, MNT_DETACH);
 +	ksu_try_umount("/sbin", false, MNT_DETACH);
