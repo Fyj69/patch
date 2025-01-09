@@ -814,7 +814,7 @@ index 009216ef..32d952b4 100644
  	if (!is_zygote_child) {
  		pr_info("handle umount ignore non zygote child: %d\n",
  			current->pid);
-@@ -540,20 +939,24 @@
+@@ -540,20 +939,23 @@
  		current->pid);
  #endif
  
