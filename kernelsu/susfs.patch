@@ -155,10 +155,10 @@ index 66929756..1e9ce687 100644
 -ccflags-y += -DKSU_COMPAT_HAS_SELINUX_STATE
 -endif
 -
- ifndef KSU_NEXT_EXPECTED_SIZE
- KSU_NEXT_EXPECTED_SIZE := 0x3e6
+ ifeq ($(shell grep -q "strncpy_from_user_nofault" $(srctree)/include/linux/uaccess.h; echo $$?),0)
+ ccflags-y += -DKSU_STRNCPY_FROM_USER_NOFAULT
  endif
-@@ -58,6 +50,18 @@ ccflags-y += -DEXPECTED_NEXT_HASH=\"$(KSU_NEXT_EXPECTED_HASH)\"
+@@ -70,6 +62,18 @@ ccflags-y += -DEXPECTED_NEXT_HASH=\"$(KSU_NEXT_EXPECTED_HASH)\"
  
  ccflags-y += -DKSU_COMPAT_GET_CRED_RCU
  
@@ -176,8 +176,8 @@ index 66929756..1e9ce687 100644
 +
  ccflags-y += -DKSU_UMOUNT
  
- # This feature is introduced in linux 5.0-rc1
-@@ -80,7 +84,7 @@ $(shell sed -i 's/!atomic_inc_not_zero(&((struct cred \*)cred)->usage)/!get_cred
+ # Determine the appropriate atomic function and apply patch accordingly
+@@ -105,7 +109,7 @@ $(shell sed -i "s/!$(ATOMIC_INC_FUNC)(&((struct cred \*)cred)->usage)/!get_cred_
  endif
  
  ifneq ($(shell grep -Eq "^static int can_umount" $(srctree)/fs/namespace.c; echo $$?),0)
@@ -186,7 +186,7 @@ index 66929756..1e9ce687 100644
  CAN_UMOUNT = static int can_umount(const struct path *path, int flags)\n\
  {\n\t\
          struct mount *mnt = real_mount(path->mnt);\n\t\
-@@ -102,7 +106,7 @@ $(shell sed -i '/^static bool is_mnt_ns_file/i $(CAN_UMOUNT)' $(srctree)/fs/name
+@@ -127,7 +131,7 @@ $(shell sed -i '/^static bool is_mnt_ns_file/i $(CAN_UMOUNT)' $(srctree)/fs/name
  endif
  
  ifneq ($(shell grep -Eq "^int path_umount" $(srctree)/fs/namespace.c; echo $$?),0)
@@ -195,7 +195,7 @@ index 66929756..1e9ce687 100644
  PATH_UMOUNT = int path_umount(struct path *path, int flags)\n\
  {\n\t\
          struct mount *mnt = real_mount(path->mnt);\n\t\
-@@ -119,10 +123,16 @@ endif
+@@ -144,10 +148,16 @@ endif
  
  ifneq ($(shell grep -Eq "^int path_umount" $(srctree)/fs/internal.h; echo $$?),0)
  $(shell sed -i '/^extern void __init mnt_init/a int path_umount(struct path *path, int flags);' $(srctree)/fs/internal.h;)
