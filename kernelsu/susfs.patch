@@ -144,7 +144,7 @@ index 33b204e..30df0c2 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
 @@ -29,14 +29,6 @@ $(warning "KSU_GIT_VERSION not defined! It is better to make KernelSU-Next a git
- ccflags-y += -DKSU_VERSION=16
+ ccflags-y += -DKSU_VERSION=11998
  endif
  
 -ifeq ($(shell grep -q " current_sid(void)" $(srctree)/security/selinux/include/objsec.h; echo $$?),0)
