@@ -6,6 +6,7 @@
 - [slimhub_actions](https://github.com/rokibhasansagar/slimhub_actions)
 - [DogDayAndroid](https://github.com/DogDayAndroid/Android-Builder)
 - [KernelSU_Action](https://github.com/XiaoleGun/KernelSU_Action)
+- [JackA1ltman](https://github.com/JackA1ltman/NonGKI_Kernel_Build)
 - [kali-nethunter_patches](https://github.com/tomxi1997/kali-nethunter_patches)
 - [Kali-defconfig-checker](https://github.com/Biohazardousrom/Kali-defconfig-checker)
 - [lxc-docker-support-for-android](https://github.com/tomxi1997/lxc-docker-support-for-android)
