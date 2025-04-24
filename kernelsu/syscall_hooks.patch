@@ -40,10 +40,10 @@
  
 --- a/fs/open.c	2025-02-25 16:26:48.056318400 -0500
 +++ b/fs/open.c	2025-02-25 16:33:35.583177999 -0500
-@@ -466,8 +466,16 @@
- 	return res;
- }
- 
+@@ -360,6 +360,11 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
+  * We do this by temporarily clearing all FS-related capabilities and
+  * switching the fsuid/fsgid around to the real ones.
+  */
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_HOOK_KPROBES)
 +extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
 +			                    int *flags);
@@ -51,16 +51,22 @@
 +
  SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
  {
+ 	const struct cred *old_cred;
+@@ -370,6 +375,10 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
+ 	int res;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW;
+ 
 +#if defined(CONFIG_KSU) && !defined(KSU_HOOK_WITH_KPROBES)
 +	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
 +#endif
- 	return do_faccessat(dfd, filename, mode, 0);
- }
++
+ 	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
+ 		return -EINVAL;
  
 --- a/fs/read_write.c	2025-02-25 16:26:48.085561100 -0500
 +++ b/fs/read_write.c	2025-02-25 16:34:38.409673281 -0500
-@@ -628,8 +628,18 @@
- 	return ret;
+@@ -581,11 +581,22 @@ static inline void file_pos_write(struct file *file, loff_t pos)
+ 		file->f_pos = pos;
  }
  
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_HOOK_KPROBES)
@@ -71,12 +77,17 @@
 +
  SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
  {
+ 	struct fd f = fdget_pos(fd);
+ 	ssize_t ret = -EBADF;
+ 
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_HOOK_KPROBES)
 +	if (unlikely(ksu_vfs_read_hook)) 
 +		ksu_handle_sys_read(fd, &buf, &count);
 +#endif
- 	return ksys_read(fd, buf, count);
- }
++
+ 	if (f.file) {
+ 		loff_t pos = file_pos_read(f.file);
+ 		ret = vfs_read(f.file, buf, count, &pos);
  
 --- a/fs/stat.c	2025-02-25 16:26:48.095308700 -0500
 +++ b/fs/stat.c	2025-02-25 16:40:30.177700209 -0500
