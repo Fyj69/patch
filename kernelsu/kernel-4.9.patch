@@ -833,6 +833,15 @@ index fd98e5100cabe..b82f36eb18acb 100644
  		show_mark_fhandle(m, inode);
  		seq_putc(m, '\n');
  		iput(inode);
+@@ -108,7 +156,7 @@ void inotify_show_fdinfo(struct seq_file *m, struct file *f)
+ 
+ #ifdef CONFIG_FANOTIFY
+ 
+-static void fanotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark)
++static void fanotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark, struct file *file)
+ {
+ 	unsigned int mflags = 0;
+ 	struct inode *inode;
 diff --git a/fs/overlayfs/inode.c b/fs/overlayfs/inode.c
 index 5b5153bf0d2ea..62af88781ac52 100644
 --- a/fs/overlayfs/inode.c
