@@ -1,3 +1,14 @@
+diff --git a/.gitignore b/.gitignore
+index 706fd07f..0e6a2c9b 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,2 +1,5 @@
+ .idea
+ .vscode
++*.patch
++*.rej
++*.orig
+\ No newline at end of file
 diff --git a/kernel/Kconfig b/kernel/Kconfig
 index 67f177f4..5b4100b7 100644
 --- a/kernel/Kconfig
