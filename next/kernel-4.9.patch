@@ -784,7 +784,7 @@ index fd98e5100cabe..b82f36eb18acb 100644
  {
  	struct inotify_inode_mark *inode_mark;
  	struct inode *inode;
-@@ -83,13 +101,44 @@ static void inotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark)
+@@ -83,16 +101,47 @@ static void inotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark)
  	inode_mark = container_of(mark, struct inotify_inode_mark, fsn_mark);
  	inode = igrab(mark->inode);
  	if (inode) {
@@ -829,7 +829,11 @@ index fd98e5100cabe..b82f36eb18acb 100644
 +		//u32 mask = mark->mask & IN_ALL_EVENTS;
  		seq_printf(m, "inotify wd:%x ino:%lx sdev:%x mask:%x ignored_mask:%x ",
  			   inode_mark->wd, inode->i_ino, inode->i_sb->s_dev,
- 			   mask, mark->ignored_mask);
+-			   mask, mark->ignored_mask);
++			   mark->mask, mark->ignored_mask);
+ 		show_mark_fhandle(m, inode);
+ 		seq_putc(m, '\n');
+ 		iput(inode);
 diff --git a/fs/overlayfs/inode.c b/fs/overlayfs/inode.c
 index 5b5153bf0d2ea..62af88781ac52 100644
 --- a/fs/overlayfs/inode.c
