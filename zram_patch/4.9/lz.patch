@@ -170,17 +170,18 @@ diff -u a/drivers/block/zram/Kconfig b/drivers/block/zram/Kconfig
 diff -u a/drivers/block/zram/zcomp.c b/drivers/block/zram/zcomp.c
 --- a/drivers/block/zram/zcomp.c
 +++ b/drivers/block/zram/zcomp.c
-@@ -19,7 +19,9 @@
+@@ -19,7 +19,10 @@
  #include "zcomp.h"
  
  static const char * const backends[] = {
 +#if IS_ENABLED(CONFIG_CRYPTO_LZO)
  	"lzo",
+ 	"lzo-rle",
 +#endif
  #if IS_ENABLED(CONFIG_CRYPTO_LZ4)
  	"lz4",
  #endif
-@@ -29,6 +31,18 @@ static const char * const backends[] = {
+@@ -29,6 +31,15 @@ static const char * const backends[] = {
  #if IS_ENABLED(CONFIG_CRYPTO_LZ4HC)
  	"lz4hc",
  #endif
@@ -192,9 +193,6 @@ diff -u a/drivers/block/zram/zcomp.c b/drivers/block/zram/zcomp.c
 +#endif
 +#if IS_ENABLED(CONFIG_CRYPTO_LZ4KD)
 +	"lz4kd",
-+#endif
-+#if IS_ENABLED(CONFIG_CRYPTO_DEFLATE)
-+	"deflate",
 +#endif
  #if IS_ENABLED(CONFIG_CRYPTO_842)
  	"842",
