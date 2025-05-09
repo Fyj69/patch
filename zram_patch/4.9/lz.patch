@@ -170,7 +170,7 @@ diff -u a/drivers/block/zram/Kconfig b/drivers/block/zram/Kconfig
 diff -u a/drivers/block/zram/zcomp.c b/drivers/block/zram/zcomp.c
 --- a/drivers/block/zram/zcomp.c
 +++ b/drivers/block/zram/zcomp.c
-@@ -19,7 +19,10 @@
+@@ -19,8 +19,10 @@
  #include "zcomp.h"
  
  static const char * const backends[] = {
