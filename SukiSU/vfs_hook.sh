@@ -25,11 +25,11 @@ for i in "${patch_files[@]}"; do
     fs/devpts/inode.c)
         sed -i '/struct dentry \*devpts_pty_new/,/return dentry;/ {
     /return dentry;/ {n; a\
-#ifdef CONFIG_KSU\nextern int ksu_handle_devpts(struct inode*);\n#endif
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_HOOK_KPROBES)\nextern int ksu_handle_devpts(struct inode*);\n#endif
     }
 }
         /if (dentry->d_sb->s_magic != DEVPTS_SUPER_MAGIC)/i\
-	#ifdef CONFIG_KSU\n	ksu_handle_devpts(dentry->d_inode);\n	#endif' fs/devpts/inode.c
+	#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_HOOK_KPROBES)\n	ksu_handle_devpts(dentry->d_inode);\n	#endif' fs/devpts/inode.c
         ;;
 
     # security/selinux/hooks.c
