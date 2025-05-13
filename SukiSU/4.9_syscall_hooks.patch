@@ -127,6 +127,7 @@ index 100494cd8849..9174586f4acb 100644
 +
  	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
  		return -EINVAL;
+ 
 diff --git a/fs/read_write.c b/fs/read_write.c
 index da16d7ccca12..c9508cfb8290 100644
 --- a/fs/read_write.c
