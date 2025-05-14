@@ -21,18 +21,16 @@ for i in "${patch_files[@]}"; do
 
     case $i in
 
-    # fs/devpts/inode.c
     fs/devpts/inode.c)
         sed -i '/struct dentry \*devpts_pty_new/,/return dentry;/ {
     /return dentry;/ {n; a\
-#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_HOOK_KPROBES)\nextern int ksu_handle_devpts(struct inode*);\n#endif
+#ifdef CONFIG_KSU\nextern int ksu_handle_devpts(struct inode*);\n#endif
     }
 }
         /if (dentry->d_sb->s_magic != DEVPTS_SUPER_MAGIC)/i\
-	#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_HOOK_KPROBES)\n	ksu_handle_devpts(dentry->d_inode);\n	#endif' fs/devpts/inode.c
+	#ifdef CONFIG_KSU\n	ksu_handle_devpts(dentry->d_inode);\n	#endif' fs/devpts/inode.c
         ;;
 
-    # security/selinux/hooks.c
     security/selinux/hooks.c)
         if grep -q "^VERSION = [1-4]" Makefile; then
         sed -i '/int nnp = (bprm->unsafe & LSM_UNSAFE_NO_NEW_PRIVS);/i\    static u32 ksu_sid;\n    char *secdata;' security/selinux/hooks.c
