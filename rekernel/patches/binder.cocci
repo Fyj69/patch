@@ -46,6 +46,7 @@ identifier proc, tsk;
 @transaction_flags@
 expression tr, thread;
 @@
+- 		if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack) {
 + #ifdef CONFIG_REKERNEL
 + if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack && tr->to_proc) {
 + #else
