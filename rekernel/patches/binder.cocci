@@ -45,13 +45,12 @@ identifier proc, tsk;
 // Add transaction flag check
 @transaction_flags@
 expression tr, thread;
-statement S;
 @@
-- if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack) S
+- if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack) {
 + #ifdef CONFIG_REKERNEL
-+ if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack && tr->to_proc) S
++ if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack && tr->to_proc) {
 + #else
-+ if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack) S
++ if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack) {
 + #endif /* CONFIG_REKERNEL */
 
 // Add rekernel transaction call
