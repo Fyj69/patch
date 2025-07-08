@@ -46,8 +46,7 @@ identifier proc, tsk;
 @transaction_flags@
 expression tr, thread;
 @@
-if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack)
-
+- if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack) {
 
 // Add rekernel transaction call
 @add_transaction_call@
