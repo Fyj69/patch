@@ -1,15 +1,12 @@
-// Add rekernel header includes
-@includes@
+// Add ReKernel includes and transaction hook
+@add_rekernel_transaction@
+identifier proc, tsk;
 @@
 #include <uapi/linux/android/binder.h>
 + #ifdef CONFIG_REKERNEL
 + #include <../rekernel/rekernel.h>
 + #endif /* CONFIG_REKERNEL */
 
-// Add rekernel transaction function
-@add_rekernel_transaction@
-identifier proc, tsk;
-@@
 + #ifdef CONFIG_REKERNEL
 + void rekernel_binder_transaction(bool reply, struct binder_transaction *t,
 +                               struct binder_node *target_node,
@@ -19,9 +16,9 @@ identifier proc, tsk;
 +   if (!t->to_proc)
 +     return;
 +   to_proc = t->to_proc;
-+ 
++
 +   if (reply) {
-+     binder_reply_handler(task_tgid_nr(current), current, 
++     binder_reply_handler(task_tgid_nr(current), current,
 +                         to_proc->pid, to_proc->tsk, false, tr);
 +   } else if (t->from) {
 +     if (t->from->proc) {
@@ -31,9 +28,9 @@ identifier proc, tsk;
 +   } else { // oneway=1
 +     binder_trans_handler(task_tgid_nr(current), current,
 +                         to_proc->pid, to_proc->tsk, true, tr);
-+ 
++
 +     target_alloc = &to_proc->alloc;
-+     if (target_alloc->free_async_space < 
++     if (target_alloc->free_async_space <
 +         (target_alloc->buffer_size / 10 + 0x300)) {
 +       binder_overflow_handler(task_tgid_nr(current), current,
 +                             to_proc->pid, to_proc->tsk, true, tr);
