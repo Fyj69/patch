@@ -284,16 +284,16 @@ index 10b206e..6634dc4 100644
  	}
  #endif
  out:
-@@ -1947,6 +2087,11 @@ static int walk_component(struct nameidata *nd, int flags)
+@@ -1948,6 +2088,11 @@ static int walk_component(struct nameidata *nd, int flags)
  	int err;
  	size_t len;
  	static int miss_cnt = 0;
+ 	struct nedf_node *nn;
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +		if (nd->state & ND_STATE_LOOKUP_LAST) {
 +			nd->flags |= ND_FLAGS_LOOKUP_LAST;
 +		}
 +#endif
- 	struct nedf_node *nn;
  	/*
  	 * "." and ".." are special - ".." especially so because it has
 @@ -2391,12 +2536,6 @@ OK:
