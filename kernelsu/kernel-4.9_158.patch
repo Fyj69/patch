@@ -334,11 +334,14 @@ index 10b206e..6634dc4 100644
  		if (!d_can_lookup(nd->path.dentry))
  			err = -ENOTDIR;
  	if (!err) {
-@@ -3388,6 +3538,23 @@ static int atomic_open(struct nameidata *nd, struct dentry *dentry,
+@@ -3388,6 +3538,27 @@ static int atomic_open(struct nameidata *nd, struct dentry *dentry,
  				path->mnt = nd->path.mnt;
  				return 1;
  			}
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
++{
++   struct dentry *parent = nd->path.dentry;
++   struct qstr *name = &nd->last;
 +			if (nd->state & ND_STATE_LAST_SDCARD_SUS_PATH) {
 +				// return -ENOENT here since it is walking the sub path of sus sdcard path
 +				return -ENOENT;
@@ -354,6 +357,7 @@ index 10b206e..6634dc4 100644
 +					nd->state |= ND_STATE_LAST_SDCARD_SUS_PATH;
 +				}
 +			}
++}
 +#endif
  		}
  	}
