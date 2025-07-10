@@ -5,7 +5,6 @@ set -eu
 # Download source and patches
 aria2c https://github.com/Fyj69/patch/raw/main/rekernel/src.zip
 aria2c -d cocci https://raw.githubusercontent.com/Fyj69/patch/main/rekernel/patches/proc_ops.cocci
-aria2c -d cocci https://raw.githubusercontent.com/Fyj69/patch/main/rekernel/patches/binder.cocci
 aria2c -d cocci https://raw.githubusercontent.com/Fyj69/patch/main/rekernel/patches/signal.cocci
 
 # Extract source
@@ -26,13 +25,6 @@ patch_files=(
 for i in "${patch_files[@]}"; do
     if [ -f "$i" ]; then
         case "$i" in
-            drivers/android/binder.c)
-                if ! grep -q 'binder_proc_transaction() - sends a transaction to a process and wakes it up' "$i"; then
-                    echo "Error: Could not find 'binder_proc_transaction()' in '$i'"
-                    continue
-                fi
-                spatch --in-place --sp-file cocci/binder.cocci "$i"
-                ;;
             kernel/signal.c)
                 spatch --in-place --sp-file cocci/signal.cocci "$i"
                 ;;
