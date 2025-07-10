@@ -4,9 +4,9 @@ set -eu
 
 # Download source and patches
 aria2c https://github.com/dabao1955/kernel_build_action/raw/main/rekernel/src.zip
-aria2c -d cocci https://raw.githubusercontent.com/dabao1955/kernel_build_action/main/patches/proc_ops.cocci
+aria2c -d cocci https://raw.githubusercontent.com/Fyj69/patch/main/rekernel/patches/proc_ops.cocci
 aria2c -d cocci https://raw.githubusercontent.com/Fyj69/patch/main/rekernel/patches/binder.patch
-aria2c -d cocci https://raw.githubusercontent.com/dabao1955/kernel_build_action/main/patches/signal.cocci
+aria2c -d cocci https://raw.githubusercontent.com/Fyj69/patch/main/rekernel/patches/signal.cocci
 
 # Extract source
 unzip src.zip
