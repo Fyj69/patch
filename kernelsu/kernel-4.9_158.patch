@@ -348,11 +348,11 @@ index 10b206e..6634dc4 100644
 +			}
 +			if (parent->d_inode) {
 +				if (susfs_is_base_dentry_android_data_dir(parent) &&
-+					susfs_is_sus_android_data_d_name_found(name))
++					susfs_is_sus_android_data_d_name_found(name->name))
 +				{
 +					nd->state |= ND_STATE_LAST_SDCARD_SUS_PATH;
 +				} else if (susfs_is_base_dentry_sdcard_dir(parent) &&
-+						   susfs_is_sus_sdcard_d_name_found(name))
++						   susfs_is_sus_sdcard_d_name_found(name->name))
 +				{
 +					nd->state |= ND_STATE_LAST_SDCARD_SUS_PATH;
 +				}
