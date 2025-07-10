@@ -46,7 +46,6 @@ identifier proc, tsk;
 @add_transaction_call@
 expression reply, t, target_node, tr;
 @@
-	trace_binder_transaction(reply, t, target_node);
 + #ifdef CONFIG_REKERNEL
 + rekernel_binder_transaction(reply, t, target_node, tr);
 + #endif /* CONFIG_REKERNEL */
