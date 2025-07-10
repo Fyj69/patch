@@ -42,14 +42,6 @@ identifier proc, tsk;
 + }
 + #endif /* CONFIG_REKERNEL */
 
-// Add transaction flag check
-@transaction_flags@
-expression tr, thread;
-statement S;
-@@
--		if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack) S
-+		if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack) S
-
 // Add rekernel transaction call
 @add_transaction_call@
 expression reply, t, target_node, tr;
