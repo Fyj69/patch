@@ -12,31 +12,9 @@ index cd410e5..11ab305 100644
  #include "binder_alloc.h"
  #include "binder_trace.h"
  /* curtis, 20180111, opchain*/
-@@ -3163,7 +3166,11 @@ static void binder_transaction(struct binder_proc *proc,
- 			goto err_invalid_target_handle;
- 		}
- 		binder_inner_proc_lock(proc);
-+#ifdef CONFIG_REKERNEL
-+		if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack && tr->to_proc) {
-+#else
- 		if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack) {
-+#endif /* CONFIG_REKERNEL */
- 			struct binder_transaction *tmp;
- 
- 			tmp = thread->transaction_stack;
-@@ -3286,6 +3293,9 @@ static void binder_transaction(struct binder_proc *proc,
- 	}
- 
- 	trace_binder_transaction(reply, t, target_node);
-+#ifdef CONFIG_REKERNEL
-+rekernel_binder_transaction(reply, t, target_node, tr);
-+#endif /* CONFIG_REKERNEL */
- 
- 	t->buffer = binder_alloc_new_buf(&target_proc->alloc, tr->data_size,
- 		tr->offsets_size, extra_buffers_size,
-@@ -6351,6 +6361,38 @@ err_alloc_device_names_failed:
- 
- device_initcall(binder_init);
+@@ -2155,6 +2158,38 @@ static void binder_free_transaction(struct binder_transaction *t)
+ 	binder_stats_deleted(BINDER_STAT_TRANSACTION);
+ }
  
 +#ifdef CONFIG_REKERNEL
 +void rekernel_binder_transaction(bool reply, struct binder_transaction *t,
@@ -70,5 +48,28 @@ index cd410e5..11ab305 100644
 +}
 +#endif /* CONFIG_REKERNEL */
 +
- #define CREATE_TRACE_POINTS
- #include "binder_trace.h"
+ static void binder_send_failed_reply(struct binder_transaction *t,
+ 				     uint32_t error_code)
+ {
+@@ -3163,7 +3198,11 @@ static void binder_transaction(struct binder_proc *proc,
+ 			goto err_invalid_target_handle;
+ 		}
+ 		binder_inner_proc_lock(proc);
++#ifdef CONFIG_REKERNEL
++		if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack && tr->to_proc) {
++#else
+ 		if (!(tr->flags & TF_ONE_WAY) && thread->transaction_stack) {
++#endif /* CONFIG_REKERNEL */
+ 			struct binder_transaction *tmp;
+ 
+ 			tmp = thread->transaction_stack;
+@@ -3286,6 +3325,9 @@ static void binder_transaction(struct binder_proc *proc,
+ 	}
+ 
+ 	trace_binder_transaction(reply, t, target_node);
++#ifdef CONFIG_REKERNEL
++rekernel_binder_transaction(reply, t, target_node, tr);
++#endif /* CONFIG_REKERNEL */
+ 
+ 	t->buffer = binder_alloc_new_buf(&target_proc->alloc, tr->data_size,
+ 		tr->offsets_size, extra_buffers_size,
