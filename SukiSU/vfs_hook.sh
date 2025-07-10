@@ -8,6 +8,7 @@
 set -e
 
 patch_files=(
+    arch/arm/kernel/sys_arm.c
     fs/exec.c
     fs/open.c
     fs/read_write.c
@@ -26,6 +27,13 @@ for i in "${patch_files[@]}"; do
     fi
 
     case $i in
+
+    arch/arm/kernel/sys_arm.c)
+        if [ "$FIRST_VERSION" -lt 4 ] && [ "$SECOND_VERSION" -lt 18 ]; then
+            sed -i '/asmlinkage int sys_execve(const char __user \*filenamei,/i \#ifdef CONFIG_KSU\nextern bool ksu_execveat_hook __read_mostly;\nextern int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,\n\t\t\t\t        void *__never_use_argv, void *__never_use_envp,\n\t\t\t\t        int *__never_use_flags);\nextern int ksu_handle_execve_ksud(const char __user *filename_user,\n\t\t\tconst char __user *const __user *__argv);\n#endif' arch/arm/kernel/sys_arm.c
+            sed -i '/error = PTR_ERR(filename);/a \#ifdef CONFIG_KSU\n\tif (unlikely(ksu_execveat_hook))\n\t\tksu_handle_execve_ksud(filename, argv);\n\telse\n\t\tksu_handle_execve_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL);\n#endif' arch/arm/kernel/sys_arm.c
+        fi
+        ;;
 
     fs/exec.c)
         sed -i '/int do_execve(struct filename \*filename,/i\#ifdef CONFIG_KSU\nextern bool ksu_execveat_hook __read_mostly;\nextern int ksu_handle_execveat(int *fd, struct filename **filename_ptr, void *argv,\n\t\t\tvoid *envp, int *flags);\nextern int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,\n\t\t\t\tvoid *argv, void *envp, int *flags);\n#endif' fs/exec.c
