@@ -1286,13 +1286,15 @@ diff --git a/kernel/selinux/rules.c b/kernel/selinux/rules.c
 index dc1ca5d4..727911ff 100644
 --- a/kernel/selinux/rules.c
 +++ b/kernel/selinux/rules.c
-@@ -36,9 +36,9 @@ static struct policydb *get_policydb(void)
- 	return db;
- }
+@@ -38,11 +38,11 @@ static struct policydb *get_policydb(void)
+ 
+ static DEFINE_MUTEX(ksu_rules);
  
 -void apply_kernelsu_rules()
 +void ksu_apply_kernelsu_rules()
  {
+ 	struct policydb *db;
+ 
 -	if (!getenforce()) {
 +	if (!ksu_getenforce()) {
  		pr_info("SELinux permissive or disabled, apply rules!\n");
