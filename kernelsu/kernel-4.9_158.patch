@@ -67,16 +67,16 @@ index 10b206e..6634dc4 100644
  	unsigned	seq, m_seq;
  	int		last_type;
  	unsigned	depth;
-@@ -561,6 +573,9 @@ static void set_nameidata(struct nameidata *p, int dfd, struct filename *name)
- 	p->dfd = dfd;
- 	p->name = name;
+@@ -563,6 +575,9 @@ static void set_nameidata(struct nameidata *p, int dfd, struct filename *name)
  	p->total_link_count = old ? old->total_link_count : 0;
+ 	p->saved = old;
+ 	current->nameidata = p;
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +	p->state = 0;
 +#endif
- 	p->saved = old;
- 	current->nameidata = p;
  	p->need_nedf = true;
+ }
+ 
 @@ -1678,24 +1693,63 @@ static struct dentry *lookup_real(struct inode *dir, struct dentry *dentry,
  		dput(dentry);
  		dentry = old;
@@ -99,7 +99,8 @@ index 10b206e..6634dc4 100644
 +#else
  	struct dentry *dentry = lookup_dcache(name, base, flags);
 +#endif
-+
+ 
+-	if (dentry)
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +	if (base && base->d_inode && !found_sus_path) {
 +		if (susfs_is_base_dentry_android_data_dir(base) &&
@@ -122,8 +123,7 @@ index 10b206e..6634dc4 100644
 +	dentry = lookup_dcache(name, base, flags);
 +retry:
 +#endif
- 
--	if (dentry)
++
 +	if (dentry) {
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +		if (!found_sus_path && !IS_ERR(dentry) && dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
@@ -284,19 +284,67 @@ index 10b206e..6634dc4 100644
  	}
  #endif
  out:
-@@ -1948,6 +2088,11 @@ static int walk_component(struct nameidata *nd, int flags)
- 	int err;
- 	size_t len;
- 	static int miss_cnt = 0;
- 	struct nedf_node *nn;
+@@ -1963,6 +2103,11 @@ static int walk_component(struct nameidata *nd, int flags)
+ 	if (unlikely(err <= 0)) {
+ 		if (err < 0)
+ 			return err;
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +		if (nd->state & ND_STATE_LOOKUP_LAST) {
 +			nd->flags |= ND_FLAGS_LOOKUP_LAST;
 +		}
 +#endif
- 	/*
- 	 * "." and ".." are special - ".." especially so because it has
-@@ -2391,12 +2536,6 @@ OK:
+ 		/*Curtis, 2018/04/25 non-exist dcache lookup*/
+ 		if (n_toggle && nd->need_nedf &&
+ 		    ND_INODE(nd)->i_op->gettag) {
+@@ -2264,6 +2409,9 @@ static int link_path_walk(const char *name, struct nameidata *nd)
+ 	int err;
+ 	uint16_t nf_index;
+ 	struct nedf_node *nn;
++#ifdef CONFIG_KSU_SUSFS_SUS_PATH
++	struct dentry *dentry;
++#endif
+ 
+ 	while (*name=='/')
+ 		name++;
+@@ -2278,6 +2426,13 @@ static int link_path_walk(const char *name, struct nameidata *nd)
+ 		err = may_lookup(nd);
+ 		if (err)
+ 			return err;
++#ifdef CONFIG_KSU_SUSFS_SUS_PATH
++		dentry = nd->path.dentry;
++		if (dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
++			// return -ENOENT here since it is walking the sub path of sus path
++			return -ENOENT;
++		}
++#endif
+ 
+ 		hash_len = hash_name(nd->path.dentry, name);
+ 
+@@ -2303,6 +2458,23 @@ static int link_path_walk(const char *name, struct nameidata *nd)
+ 				hash_len = this.hash_len;
+ 				name = this.name;
+ 			}
++#ifdef CONFIG_KSU_SUSFS_SUS_PATH
++			if (nd->state & ND_STATE_LAST_SDCARD_SUS_PATH) {
++				// return -ENOENT here since it is walking the sub path of sus sdcard path
++				return -ENOENT;
++			}
++			if (parent->d_inode) {
++				if (susfs_is_base_dentry_android_data_dir(parent) &&
++					susfs_is_sus_android_data_d_name_found(name))
++				{
++					nd->state |= ND_STATE_LAST_SDCARD_SUS_PATH;
++				} else if (susfs_is_base_dentry_sdcard_dir(parent) &&
++						   susfs_is_sus_sdcard_d_name_found(name))
++				{
++					nd->state |= ND_STATE_LAST_SDCARD_SUS_PATH;
++				}
++			}
++#endif
+ 		}
+ 
+ 		nd->last.hash_len = hash_len;
+@@ -2391,12 +2563,6 @@ OK:
  			}
  			return -ENOTDIR;
  		}
@@ -309,58 +357,17 @@ index 10b206e..6634dc4 100644
  	}
  }
  
-@@ -2529,6 +2668,9 @@ static int path_lookupat(struct nameidata *nd, unsigned flags, struct path *path
+@@ -2514,6 +2680,9 @@ static inline int lookup_last(struct nameidata *nd)
  {
- 	const char *s = path_init(nd, flags);
- 	int err;
+ 	if (nd->last_type == LAST_NORM && nd->last.name[nd->last.len])
+ 		nd->flags |= LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
-+	struct dentry *dentry;
++	nd->state |= ND_STATE_LOOKUP_LAST;
 +#endif
  
- 	if (IS_ERR(s))
- 		return PTR_ERR(s);
-@@ -2544,6 +2686,14 @@ static int path_lookupat(struct nameidata *nd, unsigned flags, struct path *path
- 		err = complete_walk(nd);
- 
- 	if (!err && nd->flags & LOOKUP_DIRECTORY)
-+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
-+		dentry = nd->path.dentry;
-+		if (dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
-+			// return -ENOENT here since it is walking the sub path of sus path
-+			return -ENOENT;
-+		}
-+#endif
-+
- 		if (!d_can_lookup(nd->path.dentry))
- 			err = -ENOTDIR;
- 	if (!err) {
-@@ -3388,6 +3538,25 @@ static int atomic_open(struct nameidata *nd, struct dentry *dentry,
- 				path->mnt = nd->path.mnt;
- 				return 1;
- 			}
-+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
-+   struct dentry *parent = nd->path.dentry;
-+   struct qstr *name = &nd->last;
-+			if (nd->state & ND_STATE_LAST_SDCARD_SUS_PATH) {
-+				// return -ENOENT here since it is walking the sub path of sus sdcard path
-+				return -ENOENT;
-+			}
-+			if (parent->d_inode) {
-+				if (susfs_is_base_dentry_android_data_dir(parent) &&
-+					susfs_is_sus_android_data_d_name_found(name->name))
-+				{
-+					nd->state |= ND_STATE_LAST_SDCARD_SUS_PATH;
-+				} else if (susfs_is_base_dentry_sdcard_dir(parent) &&
-+						   susfs_is_sus_sdcard_d_name_found(name->name))
-+				{
-+					nd->state |= ND_STATE_LAST_SDCARD_SUS_PATH;
-+				}
-+			}
-+#endif
- 		}
- 	}
- 	dput(dentry);
-@@ -3424,15 +3591,54 @@ static int lookup_open(struct nameidata *nd, struct path *path,
+ 	nd->flags &= ~LOOKUP_PARENT;
+ 	return walk_component(nd,
+@@ -3424,15 +3621,54 @@ static int lookup_open(struct nameidata *nd, struct path *path,
  	int error, create_error = 0;
  	umode_t mode = op->mode;
  	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
@@ -415,17 +422,7 @@ index 10b206e..6634dc4 100644
  			if (IS_ERR(dentry))
  				return PTR_ERR(dentry);
  		}
-@@ -3566,6 +3772,9 @@ out_dput:
- 
- /*
-  * Handle the last step of open()
-+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
-+	nd->state |= ND_STATE_LOOKUP_LAST;
-+#endif
-  */
- static int do_last(struct nameidata *nd,
- 		   struct file *file, const struct open_flags *op,
-@@ -3583,6 +3792,10 @@ static int do_last(struct nameidata *nd,
+@@ -3583,6 +3822,10 @@ static int do_last(struct nameidata *nd,
  	struct path path;
  	int error;
  
