@@ -230,6 +230,20 @@ index 000000000..492f86220
 +	strscpy(nlmsg_data(nlh), msg, len);
 +	return netlink_unicast(rekernel_netlink, skb, REKERNEL_USER_PORT, MSG_DONTWAIT);
 +}
+diff --git a/drivers/android/binder_alloc.h b/drivers/android/binder_alloc.h
+index e69c26f..abcdef0 100644
+--- a/drivers/android/binder_alloc.h
++++ b/drivers/android/binder_alloc.h
+@@ -284,6 +284,11 @@ void binder_alloc_copy_from_buffer(struct binder_alloc *alloc,
+        struct binder_buffer *buffer,
+        binder_size_t buffer_offset,
+        size_t bytes);
++
++/* Debug print macro for binder allocator */
++#define binder_alloc_debug(fmt, ...) \
++       pr_info(fmt, ##__VA_ARGS__)
++
+ #endif /* _LINUX_BINDER_ALLOC_H */
 diff --git a/kernel/signal.c b/kernel/signal.c
 index 4d0f34170..58c1c0872 100644
 --- a/kernel/signal.c
