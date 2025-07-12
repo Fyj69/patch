@@ -342,12 +342,13 @@ diff --git a/kernel/core_hook.c b/kernel/core_hook.c
 index 2307e665..90af003e 100644
 --- a/kernel/core_hook.c
 +++ b/kernel/core_hook.c
-@@ -35,6 +35,10 @@
+@@ -35,6 +35,11 @@
  #include <linux/vmalloc.h>
  #endif
  
 +#ifdef CONFIG_KSU_SUSFS
 +#include <linux/susfs.h>
++#define TASK_STRUCT_NON_ROOT_USER_APP_PROC  (1ULL << 0)
 +#endif // #ifdef CONFIG_KSU_SUSFS
 +
  #include "allowlist.h"
