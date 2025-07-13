@@ -2,9 +2,9 @@ diff --git a/drivers/android/binder.c b/drivers/android/binder.c
 index 20356105e..17ce8918d 100644
 --- a/drivers/android/binder.c
 +++ b/drivers/android/binder.c
-@@ -73,6 +73,8 @@
- #include "binder_alloc.h"
- #include "binder_trace.h"
+@@ -90,6 +90,8 @@
+ #include <oneplus/op_freezer/op_freezer.h>
+ #endif
  
 +#include <linux/rekernel.h>
 +
@@ -26,7 +26,7 @@ index 20356105e..17ce8918d 100644
  static void binder_transaction(struct binder_proc *proc,
  			       struct binder_thread *thread,
  			       struct binder_transaction_data *tr, int reply,
-@@ -3080,6 +3090,18 @@ static void binder_transaction(struct binder_proc *proc,
+@@ -3088,6 +3098,18 @@ static void binder_transaction(struct binder_proc *proc,
  		target_proc = target_thread->proc;
  		atomic_inc(&target_proc->tmp_ref);
  		binder_inner_proc_unlock(target_thread->proc);
@@ -45,9 +45,9 @@ index 20356105e..17ce8918d 100644
  	} else {
  		if (tr->target.handle) {
  			struct binder_ref *ref;
-@@ -3132,6 +3154,18 @@ static void binder_transaction(struct binder_proc *proc,
- 			goto err_dead_binder;
- 		}
+@@ -3154,6 +3176,18 @@ static void binder_transaction(struct binder_proc *proc,
+ #endif
+ 
  		e->to_node = target_node->debug_id;
 +		if (start_rekernel_server() == 0) {
 +			if (target_proc
@@ -61,23 +61,23 @@ index 20356105e..17ce8918d 100644
 +				send_netlink_message(binder_kmsg, strlen(binder_kmsg));
 +			}
 +		}
- 		if (WARN_ON(proc == target_proc)) {
+ 		if (security_binder_transaction(proc->tsk,
+ 						target_proc->tsk) < 0) {
  			return_error = BR_FAILED_REPLY;
- 			return_error_param = -EINVAL;
 diff --git a/drivers/android/binder_alloc.c b/drivers/android/binder_alloc.c
 index 5addcd56a..c63370b25 100644
 --- a/drivers/android/binder_alloc.c
 +++ b/drivers/android/binder_alloc.c
-@@ -33,6 +33,7 @@
- #include "binder_alloc.h"
- #include "binder_trace.h"
+@@ -38,6 +38,7 @@
+ #include <oneplus/op_freezer/op_freezer.h>
+ #endif
  
 +#include <linux/rekernel.h>
  struct list_lru binder_alloc_lru;
  
  static DEFINE_MUTEX(binder_alloc_mmap_lock);
-@@ -356,7 +357,12 @@ static void debug_low_async_space_locked(struct binder_alloc *alloc, int pid)
- 	}
+@@ -323,13 +324,19 @@ err_no_vma:
+ 	return vma ? -ENOMEM : -ESRCH;
  }
  
 -static struct binder_buffer *binder_alloc_new_buf_locked(
@@ -90,18 +90,18 @@ index 5addcd56a..c63370b25 100644
  				struct binder_alloc *alloc,
  				size_t data_size,
  				size_t offsets_size,
-@@ -364,6 +370,7 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
- 				int is_async,
- 				int pid)
+ 				size_t extra_buffers_size,
+ 				int is_async)
  {
 +	struct task_struct *proc_task = NULL;
  	struct rb_node *n = alloc->free_buffers.rb_node;
  	struct binder_buffer *buffer;
  	size_t buffer_size;
-@@ -395,6 +402,20 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
- 				alloc->pid, extra_buffers_size);
- 		return ERR_PTR(-EINVAL);
- 	}
+@@ -381,7 +388,20 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
+ 			}
+ 		}
+ #endif
+-
 +	if (is_async
 +			&& (alloc->free_async_space < 3 * (size + sizeof(struct binder_buffer))
 +			|| (alloc->free_async_space < REKERNEL_WARN_AHEAD_SPACE))) {
@@ -243,7 +243,7 @@ index 4d0f34170..58c1c0872 100644
  /*
   * SLAB caches for signal bits.
   */
-@@ -1201,12 +1203,25 @@ specific_send_sig_info(int sig, struct siginfo *info, struct task_struct *t)
+@@ -1227,12 +1229,25 @@ specific_send_sig_info(int sig, struct siginfo *info, struct task_struct *t)
  	return send_signal(sig, info, t, 0);
  }
  
@@ -266,8 +266,6 @@ index 4d0f34170..58c1c0872 100644
 +		}
 +	}
 +
- 	if (lock_task_sighand(p, &flags)) {
- 		ret = send_signal(sig, info, p, group);
- 		unlock_task_sighand(p, &flags);
--- 
-2.43.0
+         //huruihuan add for kill task in D status
+ 	if(sig == SIGKILL) {
+ 		if(p && p->flags & PF_FROZEN) {
