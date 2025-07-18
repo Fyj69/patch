@@ -1557,17 +1557,17 @@ index 11b2a551..7e191eba 100644
  
 -extern void escape_to_root();
 +extern void ksu_escape_to_root();
-+
+ 
+-static void __user *userspace_stack_buffer(const void *d, size_t len)
 +static const char sh_path[] = "/system/bin/sh";
 +static const char ksud_path[] = KSUD_PATH;
 +static const char su[] = SU_PATH;
- 
--static void __user *userspace_stack_buffer(const void *d, size_t len)
++
 +static inline void __user *userspace_stack_buffer(const void *d, size_t len)
  {
  	/* To avoid having to mmap a page in userspace, just write below the stack
     * pointer. */
-@@ -39,24 +47,20 @@ static void __user *userspace_stack_buffer(const void *d, size_t len)
+@@ -39,9 +47,8 @@ static void __user *userspace_stack_buffer(const void *d, size_t len)
  	return copy_to_user(p, d, len) ? NULL : p;
  }
  
@@ -1578,15 +1578,7 @@ index 11b2a551..7e191eba 100644
  
  	return userspace_stack_buffer(sh_path, sizeof(sh_path));
  }
- 
--static char __user *ksud_user_path(void)
-+static inline char __user *ksud_user_path(void)
- {
--	static const char ksud_path[] = KSUD_PATH;
--
- 	return userspace_stack_buffer(ksud_path, sizeof(ksud_path));
- }
- 
+@@ -56,7 +63,6 @@ static char __user *ksud_user_path(void)
  int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
  			 int *__unused_flags)
  {
@@ -1594,26 +1586,7 @@ index 11b2a551..7e191eba 100644
  
  #ifndef CONFIG_KSU_KPROBES_HOOK
  	if (!ksu_sucompat_non_kp) {
-@@ -64,12 +68,18 @@ int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
- 	}
- #endif
- 
-+#ifndef CONFIG_KSU_SUSFS_SUS_SU
- 	if (!ksu_is_allow_uid(current_uid().val)) {
- 		return 0;
- 	}
-+#endif
- 
-+#ifdef CONFIG_KSU_SUSFS_SUS_SU
-+	char path[sizeof(su)] = {0};
-+#else
- 	char path[sizeof(su) + 1];
- 	memset(path, 0, sizeof(path));
-+#endif
- 	ksu_strncpy_from_user_nofault(path, *filename_user, sizeof(path));
- 
- 	if (unlikely(!memcmp(path, su, sizeof(su)))) {
-@@ -80,10 +90,31 @@ int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
+@@ -80,10 +86,31 @@ int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
  	return 0;
  }
  
@@ -1647,30 +1620,7 @@ index 11b2a551..7e191eba 100644
  
  #ifndef CONFIG_KSU_KPROBES_HOOK
  	if (!ksu_sucompat_non_kp){
-@@ -91,16 +122,21 @@ int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags)
- 	}
- #endif
- 
-+#ifndef CONFIG_KSU_SUSFS_SUS_SU
- 	if (!ksu_is_allow_uid(current_uid().val)) {
- 		return 0;
- 	}
--
-+#endif
- 	if (unlikely(!filename_user)) {
- 		return 0;
- 	}
- 
-+#ifdef CONFIG_KSU_SUSFS_SUS_SU
-+	char path[sizeof(su)] = {0};
-+#else
- 	char path[sizeof(su) + 1];
- 	memset(path, 0, sizeof(path));
-+#endif
- // Remove this later!! we use syscall hook, so this will never happen!!!!!
- #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0) && 0
- 	// it becomes a `struct filename *` after 5.18
-@@ -132,8 +168,6 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
+@@ -132,8 +159,6 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
  				 int *__never_use_flags)
  {
  	struct filename *filename;
@@ -1679,7 +1629,7 @@ index 11b2a551..7e191eba 100644
  
  #ifndef CONFIG_KSU_KPROBES_HOOK
  	if (!ksu_sucompat_non_kp) {
-@@ -156,9 +190,9 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
+@@ -156,9 +181,9 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
  		return 0;
  
  	pr_info("do_execveat_common su found\n");
@@ -1691,22 +1641,16 @@ index 11b2a551..7e191eba 100644
  
  	return 0;
  }
-@@ -167,8 +201,12 @@ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
+@@ -167,7 +192,7 @@ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
  			       void *__never_use_argv, void *__never_use_envp,
  			       int *__never_use_flags)
  {
 -	const char su[] = SU_PATH;
--	char path[sizeof(su) + 1];
 +	//const char su[] = SU_PATH;
-+#ifdef CONFIG_KSU_SUSFS_SUS_SU
-+	char path[sizeof(su)] = {0};
-+#else
-+	char path[sizeof(su) + 1] = {0};
-+#endif
+ 	char path[sizeof(su) + 1];
  
  #ifndef CONFIG_KSU_KPROBES_HOOK
- 	if (!ksu_sucompat_non_kp) {
-@@ -191,7 +229,7 @@ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
+@@ -206,7 +231,7 @@ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
  	pr_info("sys_execve su found\n");
  	*filename_user = ksud_user_path();
  
@@ -1715,7 +1659,7 @@ index 11b2a551..7e191eba 100644
  
  	return 0;
  }
-@@ -337,3 +375,41 @@ void ksu_sucompat_exit()
+@@ -352,3 +377,41 @@ void ksu_sucompat_exit()
  	pr_info("ksu_sucompat_exit: hooks disabled: execve/execveat_su, faccessat, stat, devpts\n");
  #endif
  }
