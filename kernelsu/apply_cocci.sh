@@ -51,7 +51,6 @@ download_patch() {
         return 1
     fi
 }
-export -f download_patch
 
 # Apply single patch
 apply_patch() {
