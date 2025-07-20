@@ -88,7 +88,7 @@ main() {
     for patch_entry in "${PATCHES[@]}"; do
         patch_names+=("${patch_entry%%:*}")
     done
-
+export -f download_patch
     # Download patches in parallel
     echo "Downloading patches..."
     printf '%s\n' "${patch_names[@]}" | parallel --will-cite -j0 download_patch {} || {
