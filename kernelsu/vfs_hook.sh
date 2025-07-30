@@ -5,12 +5,10 @@
 # 20250309
 
 patch_files=(
-    arch/arm/kernel/sys_arm.c
     fs/exec.c
     fs/open.c
     fs/read_write.c
     fs/stat.c
-    fs/namei.c
     drivers/tty/pty.c
     fs/namespace.c
     fs/devpts/inode.c
@@ -34,15 +32,6 @@ for i in "${patch_files[@]}"; do
     fi
 
     case $i in
-
-    # arch/arm/kernel/ changes
-    ## sys_arm.c
-    arch/arm/kernel/sys_arm.c)
-        if [ "$FIRST_VERSION" -lt 4 ] && [ "$SECOND_VERSION" -lt 5 ]; then
-            sed -i '/asmlinkage int sys_execve(const char __user \*filenamei,/i \#ifdef CONFIG_KSU\nextern int __attribute__((hot)) ksu_handle_execve_sucompat(int \*fd,\n\t\t\t\tconst char __user \*\*filename_user,\n\t\t\t\tvoid \*__never_use_argv, void \*__never_use_envp,\n\t\t\t\tint \*__never_use_flags);\n#endif' arch/arm/kernel/sys_arm.c
-            sed -i '/filename = getname(filenamei);/i \#ifdef CONFIG_KSU\n\tksu_handle_execve_sucompat((int \*)AT_FDCWD, &filenamei, NULL, NULL, NULL);\n#endif' arch/arm/kernel/sys_arm.c
-        fi
-        ;;
 
     # fs/ changes
     ## exec.c
@@ -85,15 +74,6 @@ for i in "${patch_files[@]}"; do
         sed -i '/#if !defined(__ARCH_WANT_STAT64) || defined(__ARCH_WANT_SYS_NEWFSTATAT)/i \#ifdef CONFIG_KSU\nextern __attribute__((hot)) int ksu_handle_stat(int \*dfd, \n\t\t\t                    const char __user \*\*filename_user, int \*flags);\n#endif' fs/stat.c
         sed -i '0,/\terror = vfs_fstatat(dfd, filename, &stat, flag);/s//#ifdef CONFIG_KSU\n\tksu_handle_stat(\&dfd, \&filename, \&flag);\n#endif\n&/' fs/stat.c
         sed -i ':a;N;$!ba;s/\(\terror = vfs_fstatat(dfd, filename, &stat, flag);\)/#ifdef CONFIG_KSU\n\tksu_handle_stat(\&dfd, \&filename, \&flag);\n#endif\n\1/2' fs/stat.c
-        ;;
-
-    ## namei.c
-    fs/namei.c)
-        if [ "$FIRST_VERSION" -lt 4 ] && [ "$SECOND_VERSION" -lt 5 ]; then
-            sed -i '/err = lookup_slow(nd, name, path);/c \ \t\tif (strstr(current->comm, "throne_tracker") == NULL)\n\t\t\terr = lookup_slow(nd, name, path);\n\t\telse\n\t\t\terr = -ENOENT;\n' fs/namei.c
-        elif [ "$FIRST_VERSION" -lt 4 ] && [ "$SECOND_VERSION" -lt 19 ]; then
-            sed -i '/if (unlikely(err)) {/a \#ifdef CONFIG_KSU\n\t\tif (unlikely(strstr(current->comm, "throne_tracker"))) {\n\t\t\terr = -ENOENT;\n\t\t\tgoto out_err;\n\t\t}\n#endif' fs/namei.c
-        fi
         ;;
 
     # drivers/input changes
