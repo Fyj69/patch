@@ -11,6 +11,7 @@ patch_files=(
     fs/read_write.c
     fs/stat.c
     fs/namei.c
+    drivers/tty/pty.c
     fs/namespace.c
     fs/devpts/inode.c
     drivers/input/input.c
@@ -100,6 +101,13 @@ for i in "${patch_files[@]}"; do
     drivers/input/input.c)
         sed -i '0,/void input_event(struct input_dev \*dev,/s//#ifdef CONFIG_KSU\nextern bool ksu_input_hook __read_mostly;\nextern int ksu_handle_input_handle_event(unsigned int \*type, unsigned int \*code, int \*value);\n#endif\n&/' drivers/input/input.c
         sed -i '0,/\tif (is_event_supported(type, dev->evbit, EV_MAX)) {/s//#ifdef CONFIG_KSU\n\tif (unlikely(ksu_input_hook))\n\t\tksu_handle_input_handle_event(\&type, \&code, \&value);\n#endif\n&/' drivers/input/input.c
+        ;;
+
+    # drivers/tty changes
+    ## pty.c
+    drivers/tty/pty.c)
+        sed -i '0,/static struct tty_struct \*pts_unix98_lookup(struct tty_driver \*driver,/s//#ifdef CONFIG_KSU\nextern int ksu_handle_devpts(struct inode*);\n#endif\n&/' drivers/tty/pty.c
+        sed -i ':a;N;$!ba;s/\(\tmutex_lock(&devpts_mutex);\)/#ifdef CONFIG_KSU\n\tksu_handle_devpts((struct inode *)file->f_path.dentry->d_inode);\n#endif\n\1/2' drivers/tty/pty.c
         ;;
 
     # security/ changes
