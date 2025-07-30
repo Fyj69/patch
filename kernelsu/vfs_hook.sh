@@ -72,14 +72,12 @@ for i in "${patch_files[@]}"; do
         ;;
 
     # drivers/input changes
-    ## input.c
     drivers/input/input.c)
         sed -i '/static void input_handle_event/i\#ifdef CONFIG_KSU\nextern bool ksu_input_hook __read_mostly;\nextern int ksu_handle_input_handle_event(unsigned int *type, unsigned int *code, int *value);\n#endif\n' drivers/input/input.c
         sed -i '/int disposition = input_get_disposition(dev, type, code, &value);/a\	#ifdef CONFIG_KSU\n	if (unlikely(ksu_input_hook))\n		ksu_handle_input_handle_event(&type, &code, &value);\n	#endif' drivers/input/input.c
         ;;
 
     # security/ changes
-    ## security.c
     security/security.c)
         if [ "$FIRST_VERSION" -lt 4 ] && [ "$SECOND_VERSION" -lt 18 ]; then
             sed -i '/#ifdef CONFIG_BPF_SYSCALL/i \#ifdef CONFIG_KSU\nextern int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,\n\t\t   unsigned long arg4, unsigned long arg5);\nextern int ksu_handle_rename(struct dentry *old_dentry, struct dentry *new_dentry);\nextern int ksu_handle_setuid(struct cred *new, const struct cred *old);\n#endif' security/security.c
@@ -89,7 +87,7 @@ for i in "${patch_files[@]}"; do
         fi
         ;;
 
-    ## selinux/hooks.c
+    # security/selinux/ changes
     security/selinux/hooks.c)
         if [ "$FIRST_VERSION" -lt 4 ] && [ "$SECOND_VERSION" -lt 11 ]; then
             sed -i '/static int selinux_bprm_set_creds(struct linux_binprm \*bprm)/i \#ifdef CONFIG_KSU\nextern bool is_ksu_transition(const struct task_security_struct \*old_tsec,\n\t\t\tconst struct task_security_struct \*new_tsec);\n#endif' security/selinux/hooks.c
@@ -101,7 +99,6 @@ for i in "${patch_files[@]}"; do
         ;;
 
     # fs/ changes
-    ## fs/namespace.c
     fs/namespace.c)
         if [[ $(grep -c "static int can_umount(const struct" fs/namespace.c) == 0 ]]; then
             if grep -q "may_mandlock(void)" fs/namespace.c; then
@@ -150,7 +147,6 @@ int path_umount(struct path *path, int flags)\n\
         ;;
 
     # fs/devpts changes
-    ## inode.c
     fs/devpts/inode.c)
         sed -i '/struct dentry \*devpts_pty_new/,/return dentry;/ {
     /return dentry;/ {n; a\
