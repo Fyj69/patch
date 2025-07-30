@@ -74,7 +74,8 @@ for i in "${patch_files[@]}"; do
             sed -i '0,/ret = vfs_read(file, buf, count, &pos);/ { /ret = vfs_read(file, buf, count, &pos);/i \#ifdef CONFIG_KSU\n\tif (unlikely(ksu_vfs_read_hook))\n\t\tksu_handle_sys_read(fd, &buf, &count);\n#endif
                                                            }' fs/read_write.c
         else
-            sed -i '0,/if (f.file) {/s//if (f.file) {\n#ifdef CONFIG_KSU\n\tif (unlikely(ksu_vfs_read_hook))\n\t\tksu_handle_sys_read(fd, \&buf, \&count);\n#endif/' fs/read_write.c
+            sed -i '0,/if (f.file) {/s//if (f.file) {\nloff_t pos;\n#ifdef CONFIG_KSU\n\tif (unlikely(ksu_vfs_read_hook))\n\t\tksu_handle_sys_read(fd, \&buf, \&count);\n#endif/' fs/read_write.c
+	    sed -i '0,/loff_t pos = file_pos_read(f.file);/s/loff_t pos = file_pos_read(f.file);/pos = file_pos_read(f.file);/' fs/read_write.c
         fi
         sed -i '/SYSCALL_DEFINE3(read, unsigned int, fd, char __user \*, buf, size_t, count)/i\#ifdef CONFIG_KSU\nextern bool ksu_vfs_read_hook __read_mostly;\nextern int ksu_handle_sys_read(unsigned int fd, char __user **buf_ptr,\n\t\t\tsize_t *count_ptr);\n#endif' fs/read_write.c
         ;;
