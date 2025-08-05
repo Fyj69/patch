@@ -12,6 +12,7 @@ patch_files=(
     fs/namespace.c
     fs/devpts/inode.c
     drivers/input/input.c
+    drivers/tty/pty.c
     security/security.c
     security/selinux/hooks.c
 )
@@ -33,7 +34,7 @@ for i in "${patch_files[@]}"; do
     case $i in
 
     # fs/ changes
-    ## exec.c
+    # exec.c
     fs/exec.c)
         sed -i '/int do_execve(struct filename \*filename,/i\#ifdef CONFIG_KSU\nextern bool ksu_execveat_hook __read_mostly;\nextern int ksu_handle_execveat(int *fd, struct filename **filename_ptr, void *argv,\n\t\t\tvoid *envp, int *flags);\nextern int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,\n\t\t\t\tvoid *argv, void *envp, int *flags);\n#endif' fs/exec.c
         sed -i '/do_execve *(/,/^}/ {
@@ -49,7 +50,7 @@ for i in "${patch_files[@]}"; do
         sed -i ':a;N;$!ba;s/\(return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);\)/\n#ifdef CONFIG_KSU\n\tif (!ksu_execveat_hook)\n\t\tksu_handle_execveat_sucompat((int *)AT_FDCWD, \&filename, NULL, NULL, NULL); \/* 32-bit su *\/\n#endif\n\1/2' fs/exec.c
         ;;
 
-    ## open.c
+    # open.c
     fs/open.c)
         if grep -q "return do_faccessat(dfd, filename, mode);" fs/open.c; then
             sed -i '/return do_faccessat(dfd, filename, mode);/i\#ifdef CONFIG_KSU\nextern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,\n\tint *flags);\n#endif' fs/open.c
@@ -60,7 +61,7 @@ for i in "${patch_files[@]}"; do
         sed -i '0,/SYSCALL_DEFINE3(faccessat, int, dfd, const char __user \*, filename, int, mode)/s//#ifdef CONFIG_KSU\nextern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,\n\t\t\t                    int *flags);\n#endif\n&/' fs/open.c
         ;;
 
-    ## read_write.c
+    # read_write.c
     fs/read_write.c)
         if grep -q "return ksys_read(fd, buf, count);" fs/read_write.c; then
             sed -i '/return ksys_read(fd, buf, count);/i\#ifdef CONFIG_KSU\n\tif (unlikely(ksu_vfs_read_hook))\n\t\tksu_handle_sys_read(fd, &buf, &count);\n#endif' fs/read_write.c
@@ -71,7 +72,7 @@ for i in "${patch_files[@]}"; do
         sed -i '/SYSCALL_DEFINE3(read, unsigned int, fd, char __user \*, buf, size_t, count)/i\#ifdef CONFIG_KSU\nextern bool ksu_vfs_read_hook __read_mostly;\nextern int ksu_handle_sys_read(unsigned int fd, char __user **buf_ptr,\n\t\t\tsize_t *count_ptr);\n#endif' fs/read_write.c
         ;;
 
-    ## stat.c
+    # stat.c
     fs/stat.c)
         sed -i '/#if !defined(__ARCH_WANT_STAT64) || defined(__ARCH_WANT_SYS_NEWFSTATAT)/i\#ifdef CONFIG_KSU\nextern int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags);\n#endif' fs/stat.c
         sed -i '0,/\terror = vfs_fstatat(dfd, filename, &stat, flag);/s//#ifdef CONFIG_KSU\n\tksu_handle_stat(\&dfd, \&filename, \&flag);\n#endif\n&/' fs/stat.c
@@ -86,14 +87,14 @@ for i in "${patch_files[@]}"; do
         ;;
 
     # drivers/tty changes
-    ## pty.c
+    # pty.c
     drivers/tty/pty.c)
         sed -i '0,/static struct tty_struct \*pts_unix98_lookup(struct tty_driver \*driver,/s//#ifdef CONFIG_KSU\nextern int ksu_handle_devpts(struct inode*);\n#endif\n&/' drivers/tty/pty.c
         sed -i ':a;N;$!ba;s/\(\tmutex_lock(&devpts_mutex);\)/#ifdef CONFIG_KSU\n\tksu_handle_devpts((struct inode *)file->f_path.dentry->d_inode);\n#endif\n\1/2' drivers/tty/pty.c
         ;;
 
     # security/ changes
-    ## security.c
+    # security.c
     security/security.c)
         if [ "$FIRST_VERSION" -lt 4 ] && [ "$SECOND_VERSION" -lt 18 ]; then
             sed -i '/#ifdef CONFIG_BPF_SYSCALL/i \#ifdef CONFIG_KSU\nextern int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,\n\t\t   unsigned long arg4, unsigned long arg5);\nextern int ksu_handle_rename(struct dentry *old_dentry, struct dentry *new_dentry);\nextern int ksu_handle_setuid(struct cred *new, const struct cred *old);\n#endif' security/security.c
@@ -103,7 +104,7 @@ for i in "${patch_files[@]}"; do
         fi
         ;;
 
-    ## selinux/hooks.c
+    # selinux/hooks.c
     security/selinux/hooks.c)
         if [ "$FIRST_VERSION" -lt 4 ] && [ "$SECOND_VERSION" -lt 11 ]; then
             sed -i '/static int selinux_bprm_set_creds(struct linux_binprm \*bprm)/i \#ifdef CONFIG_KSU\nextern bool is_ksu_transition(const struct task_security_struct \*old_tsec,\n\t\t\tconst struct task_security_struct \*new_tsec);\n#endif' security/selinux/hooks.c
