@@ -11,6 +11,7 @@ patch_files=(
     fs/read_write.c
     fs/stat.c
     fs/namei.c
+    fs/namespace.c
     fs/devpts/inode.c
     drivers/input/input.c
     security/security.c
@@ -132,6 +133,56 @@ for i in "${patch_files[@]}"; do
         /if (dentry->d_sb->s_magic != DEVPTS_SUPER_MAGIC)/i\
 	#ifdef CONFIG_KSU\n	ksu_handle_devpts(dentry->d_inode);\n	#endif' fs/devpts/inode.c
         ;;
+
+    # fs/ changes
+    fs/namespace.c)
+        if [[ $(grep -c "static int can_umount(const struct" fs/namespace.c) == 0 ]]; then
+            if grep -q "may_mandlock(void)" fs/namespace.c; then
+                umount='may_mandlock(void)/,/^}/ { /^}/ {n;a'
+            else
+                umount='int ksys_umount(char __user \*name, int flags)/i'
+            fi
+        sed -i "/${umount} \
+#ifdef CONFIG_KSU\n\
+static int can_umount(const struct path *path, int flags)\n\
+{\n\
+    struct mount *mnt = real_mount(path->mnt);\n\
+\n\
+    if (flags & ~(MNT_FORCE | MNT_DETACH | MNT_EXPIRE | UMOUNT_NOFOLLOW))\n\
+        return -EINVAL;\n\
+    if (!may_mount())\n\
+        return -EPERM;\n\
+    if (path->dentry != path->mnt->mnt_root)\n\
+        return -EINVAL;\n\
+    if (!check_mnt(mnt))\n\
+        return -EINVAL;\n\
+    if (mnt->mnt.mnt_flags & MNT_LOCKED) /* Check optimistically */\n\
+        return -EINVAL;\n\
+    if (flags & MNT_FORCE && !capable(CAP_SYS_ADMIN))\n\
+        return -EPERM;\n\
+    return 0;\n\
+}\n\
+\n\
+int path_umount(struct path *path, int flags)\n\
+{\n\
+    struct mount *mnt = real_mount(path->mnt);\n\
+    int ret;\n\
+\n\
+    ret = can_umount(path, flags);\n\
+    if (!ret)\n\
+        ret = do_umount(mnt, flags);\n\
+\n\
+    /* we must not call path_put() as that would clear mnt_expiry_mark */\n\
+    dput(path->dentry);\n\
+    mntput_no_expire(mnt);\n\
+    return ret;\n\
+}\n\
+#endif
+}}" fs/namespace.c
+        fi
+        ;;
     esac
+
+    echo "Patch applied successfully to $i"
 
 done
