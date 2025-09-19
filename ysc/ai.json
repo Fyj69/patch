@@ -1,11 +1,11 @@
 {
   "urls": [
     {
-      "url": "https://gitee.com/fyg369/ai/raw/master/畅影世界.json",
+      "url": "https://cdn.jsdelivr.net/gh/Fyj69/patch/ysc/cysj.json",
       "name": "🔥畅影世界🔥"
     },
     {
-      "url": "https://gitee.com/fyg369/ai/raw/master/至尊宝盒.json",
+      "url": "https://cdn.jsdelivr.net/gh/Fyj69/patch/ysc/zzbh.json",
       "name": "🔥至尊宝盒🔥"
     }
   ]
